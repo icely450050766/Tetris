@@ -1,0 +1,19 @@
+body{
+    padding: 0px;
+    margin: 0px;
+}
+
+.container{
+    width: 0%;
+    height: auto;
+    margin: 1% auto;
+    border: 1px solid black;
+
+    position: relative;
+    overflow: hidden;
+}
+.container > img{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+}
