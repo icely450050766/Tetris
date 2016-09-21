@@ -12,6 +12,7 @@
         this.type = -1;// 方块组类型
         this.isRight = true;// 是否右转（只对4、5类型的方块组有效）
 
+        this.fallInterval = null;// 下落 setInterval 句柄
         this.blocksArr = [];// 存放 方块组 的状态数组（1表示有方块，0表示没有）（正方形）
         this.blocksPos = { left: 0, top: 0 }; // 方块组数组 左上角（0,0）在 mapArr[] 中的位置（单元格为单位）
 
@@ -36,7 +37,7 @@
         var _color = colorArr[ parseInt( Math.random() * 4 ) ];// 方块组 的颜色
         this.type = typeArr[ parseInt( Math.random() * 5 ) ];// 方块组 的类型 （下标 [0,4]）
 
-        this.type = 5;////////////////////////
+        //this.type = 5;////////////////////////
 
         // 根据 方块组类型，初始化 blocksArr[]
         switch( this.type ){
@@ -74,9 +75,7 @@
 
 
         // 方块组数组 左上角（0,0）在 mapArr[] 中的位置（单元格为单位）
-        //this.blocksPos.left = parseInt( Math.random() * 11 );// 图形宽度 为2
-        //this.blocksPos.top = -this.blocksArr.length;
-        this.blocksPos.left = ( blocksClass.prototype.mapArrWidthLength - this.blocksArr.length ) / 2;
+        this.blocksPos.left = parseInt( ( blocksClass.prototype.mapArrWidthLength - this.blocksArr.length ) / 2 );
         this.blocksPos.top = -this.blocksArr.length;
 
 
@@ -91,7 +90,7 @@
             var _left = ( objArr[i].left + this.blocksPos.left ) * this.cellSize;
             var _top = ( objArr[i].top + this.blocksPos.top ) * this.cellSize;
 
-            _content += '<img src="img/' + _color + 'Block.png" style="top: ' + _top + 'px; left: ' + _left + 'px;">';
+            _content += '<img class="block" src="img/' + _color + 'Block.png" style="top: ' + _top + 'px; left: ' + _left + 'px;">';
         }
         var $_content = $( _content );// 方块组 的jq对象
 
@@ -219,18 +218,32 @@
 
     };
 
-    // 普通下落
-    blocksClass.prototype.commonFall = function(){
+    // 下落（ 是否快速下落）
+    blocksClass.prototype.fall = function( isQuick ){
 
-        //console.log( this.$blocks );
-        var temp = setInterval( function(){
+        var speed = isQuick ? 10 : 500; // 下落速度
+
+        if( this.fallInterval ){ // 原本已经在下落
+            clearInterval( this.fallInterval);// 取消原本的下落
+        }
+
+        // 下落过程
+        this.fallInterval = setInterval( function(){
+
+            fallOneStep.call( this ); //  下落一步
+
+        }.bind( this ), speed );
+
+
+        // （辅助函数） 下落一步（ this 是 blocksClass类对象）
+        function fallOneStep(){
 
             var canPassObj = this.isAllCanPass( this.blocksPos.left, this.blocksPos.top + 1);
 
             // 不能通过，则停下
             if( !canPassObj.canPass ){
 
-                clearInterval( temp );// 停止下落
+                clearInterval( this.fallInterval );// 停止下落
 
                 // 更新 mapArr
                 var obj = this.find_1_pos( this.blocksArr );// 获取每个方块 相对于 this.blocksPos 的 left、top（单元格为单位）
@@ -238,6 +251,8 @@
 
                     var left = this.blocksPos.left + obj[i].left;
                     var top = this.blocksPos.top + obj[i].top;
+
+                    if( top < 0 ) this.$blocks.eq(0).trigger('gameOver');// top比顶部还高，游戏结束
                     blocksClass.prototype.mapArr[top][left] = 1;
                 }
                 //console.log( blocksClass.prototype.mapArr );
@@ -251,8 +266,7 @@
                 this.$blocks.eq(i).css( "top" , '+=' + this.cellSize + 'px' );
             }
             this.blocksPos.top ++;// 方块组位置 整体 改变
-
-        }.bind( this ), 100 ); // 500
+        }
 
     };
 
